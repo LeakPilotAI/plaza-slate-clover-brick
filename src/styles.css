@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0e0d0c;
+  --color-surface: #181614;
+  --color-surface-2: #211f1c;
+  --color-fg: #f2ece3;
+  --color-muted: #9a9388;
+  --color-subtle: #6e685f;
+  --color-accent: #d8d2c8;
+  --color-accent-fg: #0e0d0c;
+  --color-border: #2c2925;
+  --color-danger: #b4584a;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Newsreader", "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+}
+
+@layer base {
+  html,
+  body,
+  #app {
+    height: 100%;
+  }
+
+  html,
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@keyframes foil-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes foil-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.reveal {
+  animation: foil-rise 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.reveal-d1 {
+  animation-delay: 40ms;
+}
+.reveal-d2 {
+  animation-delay: 80ms;
+}
+.reveal-d3 {
+  animation-delay: 120ms;
+}
+.reveal-d4 {
+  animation-delay: 160ms;
+}
+.reveal-d5 {
+  animation-delay: 220ms;
+}
+
+.overlay-fade {
+  animation: foil-fade 250ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .overlay-fade {
+    animation: none;
+  }
+}
