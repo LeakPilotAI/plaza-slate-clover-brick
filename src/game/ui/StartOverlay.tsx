@@ -16,14 +16,14 @@ export function StartOverlay() {
     <div className="overlay-fade absolute inset-0 z-20 flex flex-col justify-end bg-gradient-to-t from-bg via-bg/80 to-bg/30 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:justify-center sm:p-12">
       <div className="mx-auto w-full max-w-lg">
         <p className="reveal text-xs font-medium uppercase tracking-[0.22em] text-muted">
-          Apt 4B · Starter apartment
+          Apt 4B · Home
         </p>
         <h1 className="reveal reveal-d1 font-display mt-2 text-5xl leading-none tracking-tight text-fg sm:text-6xl">
           Foilbound
         </h1>
         <p className="reveal reveal-d2 mt-4 max-w-md text-base leading-relaxed text-muted">
-          A cheap starter apartment. Not much here yet — a bed, a desk, a sealed
-          Lumen Arc pack. This is yours.
+          A cheap starter apartment. Bed, desk, a sealed Lumen Arc pack. This is
+          yours now.
         </p>
 
         <button

@@ -85,8 +85,7 @@ export const PROPS: PropDef[] = [
   {
     id: "desk",
     name: "Desk",
-    blurb:
-      "Particleboard, one wobbly leg. Card opening, collection work, and market research will live here later.",
+    blurb: "Particleboard, one wobbly leg. Card opening will live on this desk later.",
     kind: "use",
     carryable: false,
     position: POS.desk,
@@ -99,13 +98,13 @@ export const PROPS: PropDef[] = [
   {
     id: "computer",
     name: "Computer",
-    blurb: "Computer — Coming Soon",
+    blurb: "Computer — jobs, market, and collection tools.",
     kind: "use",
     carryable: false,
     position: POS.computer,
     dropHeight: 0.2,
     useLabel: "Use",
-    hit: [0.55, 0.7, 0.28],
+    hit: [0.7, 0.85, 0.36],
     worldMesh: false,
   },
   {
@@ -117,8 +116,20 @@ export const PROPS: PropDef[] = [
     position: POS.storage,
     dropHeight: 0.5,
     useLabel: "Open",
-    hit: [0.62, 1.05, 0.5],
-    hitOffset: [0, 0.52, 0],
+    hit: [0.62, 1.4, 0.55],
+    hitOffset: [0, 0.7, 0],
+    worldMesh: false,
+  },
+  {
+    id: "display",
+    name: "Display Shelf",
+    blurb: "Display — Empty. Pulled cards will live here later.",
+    kind: "use",
+    carryable: false,
+    position: POS.display,
+    dropHeight: 0.2,
+    useLabel: "Look",
+    hit: [0.28, 0.7, 0.95],
     worldMesh: false,
   },
   {

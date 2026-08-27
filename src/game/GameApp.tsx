@@ -9,7 +9,10 @@ import { useGame } from "./store";
 import { Hud } from "./ui/Hud";
 import { InspectOverlay } from "./ui/InspectOverlay";
 import { PauseOverlay } from "./ui/PauseOverlay";
+import { SleepOverlay } from "./ui/SleepOverlay";
 import { StartOverlay } from "./ui/StartOverlay";
+import { StorageOverlay } from "./ui/StorageOverlay";
+import { ComputerOverlay } from "./ui/ComputerOverlay";
 import { TouchControls } from "./ui/TouchControls";
 import { Apartment } from "./world";
 import { SPAWN } from "./constants";
@@ -28,6 +31,13 @@ export default function GameApp() {
       if (qa.get("debug") === "1") useGame.getState().toggleDebug();
       if (qa.get("qa") === "1") useGame.getState().start();
     }
+    const flush = () => useGame.getState().flushSave();
+    document.addEventListener("visibilitychange", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      document.removeEventListener("visibilitychange", flush);
+      window.removeEventListener("pagehide", flush);
+    };
   }, []);
 
   useEffect(() => {
@@ -74,6 +84,9 @@ export default function GameApp() {
       {phase === "boot" ? <StartOverlay /> : null}
       {phase === "paused" ? <PauseOverlay /> : null}
       {phase === "inspecting" ? <InspectOverlay /> : null}
+      {phase === "computer" ? <ComputerOverlay /> : null}
+      {phase === "storage" ? <StorageOverlay /> : null}
+      {phase === "sleeping" ? <SleepOverlay /> : null}
     </div>
   );
 }

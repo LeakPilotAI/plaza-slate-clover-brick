@@ -19,11 +19,11 @@ export const SPAWN: {
   yaw: number;
   pitch: number;
 } = {
-  x: 0.12,
+  x: 1.08,
   y: 0,
-  z: 1.35,
-  yaw: 0.08,
-  pitch: -0.16,
+  z: 1.72,
+  yaw: 0.1,
+  pitch: -0.12,
 };
 
 export const DOOR = {
@@ -55,6 +55,7 @@ export const POS = {
   mug: [2.82, 0.8, -0.76] as [number, number, number],
   binder: [-0.96, 0.45, -2.32] as [number, number, number],
   storage: [-2.94, 0, 0.58] as [number, number, number],
+  display: [-3.28, 1.22, 1.48] as [number, number, number],
   crate: [-2.86, 0.36, 2.46] as [number, number, number],
   door: [1.22, 0, ROOM.halfD] as [number, number, number],
   stair: [1.22, 1.05, ROOM.halfD + HALL.depth - 0.06] as [number, number, number],
@@ -92,14 +93,12 @@ export function hallBounds() {
 }
 
 export const FURNITURE_BOXES: Box3[] = [
-  // Bed + cardboard nightstand as one block so the player can't wedge between them.
   { pos: [-1.98, 0.25, -2.22], size: [2.44, 0.5, 1.12] },
-  // Desk + chair
-  { pos: [2.7, 0.39, -1.28], size: [1.28, 0.78, 1.58] },
-  // Storage bin
+  { pos: [2.98, 0.39, -1.28], size: [0.72, 0.78, 1.58] },
+  { pos: [2.28, 0.42, -1.28], size: [0.42, 0.84, 0.42] },
   { pos: [-2.94, 0.26, 0.58], size: [0.56, 0.52, 0.44] },
-  // Moving crate, flush to the south-west corner
   { pos: [-2.86, 0.36, 2.46], size: [0.72, 0.72, 0.72] },
+  { pos: [-3.22, 1.22, 1.48], size: [0.28, 0.62, 0.95] },
 ];
 
 export function collisionWalls(): Box3[] {

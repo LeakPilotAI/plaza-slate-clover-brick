@@ -31,6 +31,7 @@ export function installControlsTest() {
       resetPlayer();
       useGame.getState().setCarrying(null);
       useGame.getState().setInspecting(null);
+      useGame.getState().closeStation();
     },
     toggleLamp: () => useGame.getState().toggleLamp(),
     toggleDoor: () => useGame.getState().toggleDoor(),
@@ -42,6 +43,11 @@ export function installControlsTest() {
     carrying: () => useGame.getState().carrying,
     inspecting: () => useGame.getState().inspecting,
     doorOpen: () => useGame.getState().doorOpen,
+    phase: () => useGame.getState().phase,
+    openComputer: () => useGame.getState().openComputer(),
+    openStorage: () => useGame.getState().openStorage(),
+    openSleep: () => useGame.getState().openSleep(),
+    closeStation: () => useGame.getState().closeStation(),
     solids: () => solids(useGame.getState().doorOpen),
     targets: () => interactableRoots().length,
     pose: () => ({

@@ -62,16 +62,18 @@ export function ApartmentFurniture() {
     <group>
       <Bed />
       <Nightstand map={tex.cardboard} />
-      <Desk monitor={tex.monitor} />
+      <Desk monitor={tex.monitor} felt={tex.felt} />
       <Chair />
       <StorageBin />
-      <ApartmentDoor />
+      <DisplayShelf />
+      <ApartmentDoor plaque={tex.plaque} />
       <DoorFrame />
-      <Hallway linoleum={tex.linoleum} />
+      <Hallway linoleum={tex.linoleum} plaque={tex.plaque} />
       <Window city={tex.city} />
       <Shoes />
       <CeilingFixture />
       <Doormat map={tex.doormat} />
+      <WallClock />
       <StairHit />
     </group>
   );
@@ -134,8 +136,7 @@ function Nightstand({ map }: { map: THREE.Texture }) {
   );
 }
 
-function Desk({ monitor }: { monitor: THREE.Texture }) {
-  const def = getProp("desk")!;
+function Desk({ monitor, felt }: { monitor: THREE.Texture; felt: THREE.Texture }) {
   const screen = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
@@ -149,12 +150,20 @@ function Desk({ monitor }: { monitor: THREE.Texture }) {
   const comp = getProp("computer")!;
   return (
     <group>
-      <Interactable id="desk" position={POS.desk} hit={def.hit} hitOffset={def.hitOffset}>
+      <group position={POS.desk}>
         <mesh position={[0, 0.74, 0]} material={board} castShadow receiveShadow>
           <boxGeometry args={[0.62, 0.04, 1.56]} />
         </mesh>
         <mesh position={[0, 0.715, 0]} material={boardEdge}>
           <boxGeometry args={[0.64, 0.02, 1.58]} />
+        </mesh>
+        <mesh
+          position={[0.02, 0.765, 0.18]}
+          rotation={[-Math.PI / 2, 0, 0.08]}
+          receiveShadow
+        >
+          <planeGeometry args={[0.48, 0.36]} />
+          <meshStandardMaterial map={felt} roughness={0.95} />
         </mesh>
         {([
           [-0.26, 0.36, -0.7],
@@ -169,7 +178,7 @@ function Desk({ monitor }: { monitor: THREE.Texture }) {
         <mesh position={[0.18, 0.34, 0.42]} material={board} castShadow>
           <boxGeometry args={[0.24, 0.64, 0.4]} />
         </mesh>
-      </Interactable>
+      </group>
 
       <Interactable
         id="computer"
@@ -225,22 +234,37 @@ function Chair() {
 
 function StorageBin() {
   const def = getProp("storage")!;
+  const open = useGame((s) => s.phase === "storage");
+  const lid = useRef<THREE.Group>(null);
+  const ang = useRef(0);
+
+  useFrame((_, dt) => {
+    const target = open ? -0.85 : 0;
+    ang.current = THREE.MathUtils.damp(ang.current, target, 10, dt);
+    if (lid.current) lid.current.rotation.x = ang.current;
+  });
+
   return (
     <Interactable id="storage" position={POS.storage} hit={def.hit} hitOffset={def.hitOffset}>
       <mesh position={[0, 0.22, 0]} material={bin} castShadow receiveShadow>
         <boxGeometry args={[0.52, 0.44, 0.4]} />
       </mesh>
-      <mesh position={[0, 0.45, 0]} material={binLid} castShadow>
-        <boxGeometry args={[0.56, 0.04, 0.44]} />
-      </mesh>
-      <mesh position={[0, 0.22, 0.202]} material={plasticDark}>
+      <mesh
+        position={[0, 0.22, 0.202]}
+        material={plasticDark}
+      >
         <boxGeometry args={[0.28, 0.08, 0.01]} />
       </mesh>
+      <group ref={lid} position={[0, 0.45, -0.22]}>
+        <mesh position={[0, 0, 0.22]} material={binLid} castShadow>
+          <boxGeometry args={[0.56, 0.04, 0.44]} />
+        </mesh>
+      </group>
     </Interactable>
   );
 }
 
-function ApartmentDoor() {
+function ApartmentDoor({ plaque }: { plaque: THREE.Texture }) {
   const open = useGame((s) => s.doorOpen);
   const ref = useRef<THREE.Group>(null);
   const ang = useRef(0);
@@ -274,6 +298,10 @@ function ApartmentDoor() {
           <mesh position={[0, 1.86, 0.026]} material={metal}>
             <boxGeometry args={[0.16, 0.08, 0.01]} />
           </mesh>
+          <mesh position={[-0.28, 1.55, 0.026]}>
+            <planeGeometry args={[0.12, 0.12]} />
+            <meshStandardMaterial map={plaque} roughness={0.45} metalness={0.2} />
+          </mesh>
         </Interactable>
       </group>
     </group>
@@ -298,7 +326,13 @@ function DoorFrame() {
   );
 }
 
-function Hallway({ linoleum }: { linoleum: THREE.Texture }) {
+function Hallway({
+  linoleum,
+  plaque,
+}: {
+  linoleum: THREE.Texture;
+  plaque: THREE.Texture;
+}) {
   const hallFloor = useMemo(
     () => new THREE.MeshStandardMaterial({ map: linoleum, roughness: 0.88 }),
     [linoleum],
@@ -361,7 +395,54 @@ function Hallway({ linoleum }: { linoleum: THREE.Texture }) {
       <mesh position={[cx, h - 0.06, zMid]} material={hallTrim}>
         <boxGeometry args={[1.1, 0.04, 0.18]} />
       </mesh>
+      <mesh position={[cx - 0.62, 1.58, z0 + 0.06]}>
+        <planeGeometry args={[0.14, 0.14]} />
+        <meshStandardMaterial map={plaque} roughness={0.45} metalness={0.2} />
+      </mesh>
       <pointLight position={[cx, h - 0.12, zMid]} intensity={0.55} color="#e8e0c8" distance={6} />
+    </group>
+  );
+}
+
+function DisplayShelf() {
+  const def = getProp("display")!;
+  return (
+    <Interactable id="display" position={POS.display} hit={def.hit}>
+      <mesh position={[0, -0.22, 0]} material={pineDark} castShadow>
+        <boxGeometry args={[0.22, 0.04, 0.9]} />
+      </mesh>
+      <mesh position={[0, 0.08, 0]} material={pine} castShadow>
+        <boxGeometry args={[0.22, 0.04, 0.9]} />
+      </mesh>
+      <mesh position={[0, 0.38, 0]} material={pine} castShadow>
+        <boxGeometry args={[0.22, 0.04, 0.9]} />
+      </mesh>
+      <mesh position={[0, 0.08, -0.44]} material={pineDark}>
+        <boxGeometry args={[0.22, 0.64, 0.04]} />
+      </mesh>
+      <mesh position={[0, 0.08, 0.44]} material={pineDark}>
+        <boxGeometry args={[0.22, 0.64, 0.04]} />
+      </mesh>
+    </Interactable>
+  );
+}
+
+function WallClock() {
+  return (
+    <group position={[-ROOM.halfW + 0.07, 1.78, -0.95]} rotation={[0, Math.PI / 2, 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]} material={plasticDark}>
+        <cylinderGeometry args={[0.11, 0.11, 0.04, 24]} />
+      </mesh>
+      <mesh position={[0, 0, 0.022]} rotation={[Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.095, 24]} />
+        <meshStandardMaterial color="#e8e0d4" roughness={0.7} />
+      </mesh>
+      <mesh position={[0.02, 0.03, 0.03]} rotation={[0, 0, -0.7]} material={metalDark}>
+        <boxGeometry args={[0.012, 0.06, 0.006]} />
+      </mesh>
+      <mesh position={[-0.015, -0.01, 0.03]} rotation={[0, 0, 1.1]} material={metal}>
+        <boxGeometry args={[0.008, 0.04, 0.006]} />
+      </mesh>
     </group>
   );
 }

@@ -88,6 +88,13 @@ export function FirstPersonPlayer() {
     if (input.pause) {
       if (live.phase === "inspecting") {
         live.setInspecting(null);
+      } else if (
+        live.phase === "computer" ||
+        live.phase === "storage" ||
+        live.phase === "sleeping"
+      ) {
+        live.closeStation();
+        void tryPointerLock();
       } else if (live.phase === "playing") {
         exitPointerLock();
         live.pause();
@@ -401,7 +408,20 @@ function handleUse(info: PropInfo) {
     return;
   }
   if (info.id === "computer") {
-    state.useComputer();
+    exitPointerLock();
+    state.openComputer();
+    sfx.boot();
+    return;
+  }
+  if (info.id === "storage") {
+    exitPointerLock();
+    state.openStorage();
+    sfx.use();
+    return;
+  }
+  if (info.id === "bed") {
+    exitPointerLock();
+    state.openSleep();
     sfx.use();
     return;
   }
@@ -427,8 +447,6 @@ function pickUp(info: PropInfo) {
   state.setHint("");
 }
 
-const worldPos = new THREE.Vector3();
-
 function dropCarrying() {
   const state = useGame.getState();
   const carrying = state.carrying;
@@ -438,11 +456,7 @@ function dropCarrying() {
   const x = player.x + _fwd.x * 0.85;
   const z = player.z + _fwd.z * 0.85;
   const y = surfaceY(x, z) + (def?.dropHeight ?? 0.05);
-  worldPos.set(x, y, z);
-  const ev = new CustomEvent("foilbound-drop", {
-    detail: { id: carrying.id, x, y, z, yaw: player.yaw },
-  });
-  window.dispatchEvent(ev);
+  state.recordDrop(carrying.id, { x, y, z, yaw: player.yaw });
   state.setCarrying(null);
   state.markDropped();
   sfx.drop();

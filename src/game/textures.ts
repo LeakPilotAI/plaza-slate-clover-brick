@@ -237,6 +237,34 @@ export function makeMonitorTexture() {
   }, 320);
 }
 
+export function makePlaqueTexture() {
+  return canvasTexture(256, (g, s) => {
+    g.fillStyle = "#d8d2c8";
+    g.fillRect(0, 0, s, s);
+    g.fillStyle = "#2c2925";
+    g.fillRect(10, 10, s - 20, s - 20);
+    g.fillStyle = "#d8d2c8";
+    g.font = "700 96px sans-serif";
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText("4B", s / 2, s / 2 + 4);
+  });
+}
+
+export function makeFeltTexture() {
+  const tex = canvasTexture(256, (g, s) => {
+    g.fillStyle = "#2a3a38";
+    g.fillRect(0, 0, s, s);
+    for (let i = 0; i < 800; i++) {
+      g.fillStyle = `rgba(180,200,190,${0.03 + Math.random() * 0.04})`;
+      g.fillRect(Math.random() * s, Math.random() * s, 2, 2);
+    }
+  });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 2);
+  return tex;
+}
+
 export function makeDoormatTexture() {
   return canvasTexture(256, (g, s) => {
     g.fillStyle = "#3a322c";
@@ -261,6 +289,8 @@ let cache: {
   sheet: THREE.CanvasTexture;
   monitor: THREE.CanvasTexture;
   doormat: THREE.CanvasTexture;
+  plaque: THREE.CanvasTexture;
+  felt: THREE.CanvasTexture;
 } | null = null;
 
 export function getTextures() {
@@ -278,6 +308,8 @@ export function getTextures() {
       sheet: makeSheetTexture(),
       monitor: makeMonitorTexture(),
       doormat: makeDoormatTexture(),
+      plaque: makePlaqueTexture(),
+      felt: makeFeltTexture(),
     };
   }
   return cache;

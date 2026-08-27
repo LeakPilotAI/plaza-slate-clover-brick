@@ -1,5 +1,5 @@
 import { ContactShadows } from "@react-three/drei";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import * as THREE from "three";
 import { ROOM } from "./constants";
 import { ApartmentFurniture } from "./furniture";
@@ -10,8 +10,6 @@ import { movableProps } from "./props";
 import { useGame } from "./store";
 import { getTextures } from "./textures";
 
-type DropPose = { x: number; y: number; z: number; yaw: number };
-
 const WINDOW_LIGHT = { x: 0.6, y: 2.8, z: -6.2 };
 
 export function Apartment() {
@@ -19,16 +17,7 @@ export function Apartment() {
   const carryingId = useGame((s) => s.carrying?.id);
   const inspectingId = useGame((s) => s.inspecting?.id);
   const lampOn = useGame((s) => s.lampOn);
-  const [drops, setDrops] = useState<Record<string, DropPose>>({});
-
-  useEffect(() => {
-    const onDrop = (e: Event) => {
-      const d = (e as CustomEvent<DropPose & { id: string }>).detail;
-      setDrops((prev) => ({ ...prev, [d.id]: d }));
-    };
-    window.addEventListener("foilbound-drop", onDrop);
-    return () => window.removeEventListener("foilbound-drop", onDrop);
-  }, []);
+  const drops = useGame((s) => s.drops);
 
   const wallMat = useMemo(
     () =>
@@ -71,8 +60,8 @@ export function Apartment() {
 
   return (
     <group>
-      <hemisphereLight args={["#cfc4b2", "#2a241e", 0.42]} />
-      <ambientLight intensity={0.14} />
+      <hemisphereLight args={["#cfc4b2", "#2a241e", 0.5]} />
+      <ambientLight intensity={0.22} />
       <directionalLight
         position={[WINDOW_LIGHT.x, WINDOW_LIGHT.y, WINDOW_LIGHT.z]}
         intensity={1.15}
@@ -88,6 +77,7 @@ export function Apartment() {
         shadow-camera-bottom={-7}
       />
       <pointLight position={[0.1, H - 0.22, 0.05]} intensity={0.7} color="#f2e6d0" distance={9} />
+      <pointLight position={[-2.1, 1.6, -1.6]} intensity={0.35} color="#e8d8c0" distance={5} />
       {lampOn ? (
         <pointLight
           position={POS.lampLight}

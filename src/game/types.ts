@@ -23,7 +23,14 @@ export type PropInfo = Pick<
   "id" | "name" | "blurb" | "kind" | "carryable" | "useLabel"
 >;
 
-export type Phase = "boot" | "playing" | "paused" | "inspecting";
+export type Phase =
+  | "boot"
+  | "playing"
+  | "paused"
+  | "inspecting"
+  | "computer"
+  | "storage"
+  | "sleeping";
 
 export type Vec3 = { x: number; y: number; z: number };
 
@@ -52,6 +59,11 @@ declare global {
       carrying: () => PropInfo | null | undefined;
       inspecting: () => PropInfo | null | undefined;
       doorOpen: () => boolean;
+      phase: () => Phase;
+      openComputer: () => void;
+      openStorage: () => void;
+      openSleep: () => void;
+      closeStation: () => void;
       solids: () => { min: [number, number, number]; max: [number, number, number] }[];
       targets: () => number;
       pose: () => {
