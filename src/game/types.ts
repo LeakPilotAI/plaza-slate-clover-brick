@@ -1,4 +1,4 @@
-export type PropKind = "carry" | "toggle" | "inspect";
+export type PropKind = "carry" | "toggle" | "inspect" | "use";
 
 export type PropDef = {
   id: string;
@@ -10,16 +10,24 @@ export type PropDef = {
   rotationY?: number;
   holdScale?: number;
   dropHeight: number;
+  worldScale?: number;
+  useLabel?: string;
+  hit: [number, number, number];
+  hitOffset?: [number, number, number];
+  /** When false, furniture.tsx owns the mesh; we only register a hit volume. */
+  worldMesh?: boolean;
 };
 
 export type PropInfo = Pick<
   PropDef,
-  "id" | "name" | "blurb" | "kind" | "carryable"
+  "id" | "name" | "blurb" | "kind" | "carryable" | "useLabel"
 >;
 
 export type Phase = "boot" | "playing" | "paused" | "inspecting";
 
 export type Vec3 = { x: number; y: number; z: number };
+
+export type Notice = { title: string; body: string };
 
 export type ControlsProbe = {
   getYaw: () => number;
@@ -38,10 +46,13 @@ declare global {
       teleport: (x: number, y: number, z: number) => void;
       reset: () => void;
       toggleLamp: () => void;
+      toggleDoor: () => void;
       setLook: (yaw: number, pitch: number) => void;
       looking: () => PropInfo | null | undefined;
       carrying: () => PropInfo | null | undefined;
       inspecting: () => PropInfo | null | undefined;
+      doorOpen: () => boolean;
+      solids: () => { min: [number, number, number]; max: [number, number, number] }[];
       targets: () => number;
       pose: () => {
         x: number;

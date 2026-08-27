@@ -11,7 +11,8 @@ import { InspectOverlay } from "./ui/InspectOverlay";
 import { PauseOverlay } from "./ui/PauseOverlay";
 import { StartOverlay } from "./ui/StartOverlay";
 import { TouchControls } from "./ui/TouchControls";
-import { PrototypeStudio } from "./world";
+import { Apartment } from "./world";
+import { SPAWN } from "./constants";
 
 export default function GameApp() {
   const phase = useGame((s) => s.phase);
@@ -40,7 +41,12 @@ export default function GameApp() {
         className="absolute inset-0 touch-none"
         dpr={[1, 1.75]}
         shadows
-        camera={{ fov: 75, near: 0.08, far: 60, position: [0, 1.62, 2.55] }}
+        camera={{
+          fov: 75,
+          near: 0.08,
+          far: 60,
+          position: [SPAWN.x, 1.62, SPAWN.z],
+        }}
         gl={{
           antialias: true,
           powerPreference: "high-performance",
@@ -57,9 +63,9 @@ export default function GameApp() {
           });
         }}
       >
-        <color attach="background" args={["#1a1612"]} />
-        <fog attach="fog" args={["#1a1612", 8, 22]} />
-        <PrototypeStudio />
+        <color attach="background" args={["#16131c"]} />
+        <fog attach="fog" args={["#16131c", 10, 26]} />
+        <Apartment />
         <FirstPersonPlayer />
       </Canvas>
 

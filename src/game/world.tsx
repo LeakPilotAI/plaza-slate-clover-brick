@@ -1,16 +1,20 @@
 import { ContactShadows } from "@react-three/drei";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { ROOM } from "./constants";
+import { ApartmentFurniture } from "./furniture";
+import { Interactable } from "./interactable";
+import { DOOR, POS, WINDOW } from "./layout";
 import { PropMesh } from "./meshes";
-import { PROPS } from "./props";
-import { registerInteractable, unregisterInteractable } from "./registry";
+import { movableProps } from "./props";
 import { useGame } from "./store";
 import { getTextures } from "./textures";
 
 type DropPose = { x: number; y: number; z: number; yaw: number };
 
-export function PrototypeStudio() {
+const WINDOW_LIGHT = { x: 0.6, y: 2.8, z: -6.2 };
+
+export function Apartment() {
   const tex = useMemo(() => getTextures(), []);
   const carryingId = useGame((s) => s.carrying?.id);
   const inspectingId = useGame((s) => s.inspecting?.id);
@@ -30,39 +34,31 @@ export function PrototypeStudio() {
     () =>
       new THREE.MeshStandardMaterial({
         map: tex.plaster,
-        color: "#d9d1c3",
-        roughness: 0.92,
+        color: "#d4cdc0",
+        roughness: 0.94,
       }),
     [tex.plaster],
   );
   const trimMat = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: "#ece4d6",
-        roughness: 0.7,
-      }),
-    [],
-  );
-  const woodMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        map: tex.wood,
+        color: "#e6ddd0",
         roughness: 0.72,
       }),
-    [tex.wood],
+    [],
   );
-  const darkWood = useMemo(
+  const floorMat = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: "#4a382c",
-        roughness: 0.65,
+        map: tex.laminate,
+        roughness: 0.78,
       }),
-    [],
+    [tex.laminate],
   );
   const ceilingMat = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: "#e7dfd2",
+        color: "#e4dcd0",
         roughness: 1,
       }),
     [],
@@ -75,119 +71,68 @@ export function PrototypeStudio() {
 
   return (
     <group>
-      <hemisphereLight args={["#cfc4b2", "#2a241e", 0.55]} />
-      <ambientLight intensity={0.18} />
+      <hemisphereLight args={["#cfc4b2", "#2a241e", 0.42]} />
+      <ambientLight intensity={0.14} />
       <directionalLight
-        position={[-2.4, 3.2, -5.5]}
-        intensity={1.35}
+        position={[WINDOW_LIGHT.x, WINDOW_LIGHT.y, WINDOW_LIGHT.z]}
+        intensity={1.15}
         color="#f0c9a0"
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
-        shadow-camera-near={0.5}
-        shadow-camera-far={18}
-        shadow-camera-left={-8}
-        shadow-camera-right={8}
-        shadow-camera-top={8}
-        shadow-camera-bottom={-8}
+        shadow-camera-near={0.4}
+        shadow-camera-far={16}
+        shadow-camera-left={-7}
+        shadow-camera-right={7}
+        shadow-camera-top={7}
+        shadow-camera-bottom={-7}
       />
-      <pointLight position={[0, 2.4, 0.2]} intensity={0.55} color="#f2e6d0" distance={10} />
+      <pointLight position={[0.1, H - 0.22, 0.05]} intensity={0.7} color="#f2e6d0" distance={9} />
       {lampOn ? (
-        <pointLight position={[4.05, 1.45, -3.48]} intensity={1.1} color="#f4e2c0" distance={7} />
+        <pointLight
+          position={POS.lampLight}
+          intensity={1.05}
+          color="#f4e2c0"
+          distance={6.5}
+        />
       ) : null}
 
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0, 0]}
-        material={woodMat}
-        receiveShadow
-      >
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} material={floorMat} receiveShadow>
         <planeGeometry args={[W, D]} />
       </mesh>
-      <mesh
-        rotation={[Math.PI / 2, 0, 0]}
-        position={[0, H, 0]}
-        material={ceilingMat}
-        receiveShadow
-      >
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, 0]} material={ceilingMat} receiveShadow>
         <planeGeometry args={[W, D]} />
       </mesh>
 
-      {/* Walls */}
-      <mesh position={[0, H / 2, -ROOM.halfD]} material={wallMat} receiveShadow castShadow>
-        <boxGeometry args={[W, H, T]} />
-      </mesh>
-      <mesh position={[0, H / 2, ROOM.halfD]} material={wallMat} receiveShadow>
-        <boxGeometry args={[W, H, T]} />
-      </mesh>
-      <mesh position={[-ROOM.halfW, H / 2, 0]} material={wallMat} receiveShadow>
-        <boxGeometry args={[T, H, D]} />
-      </mesh>
-      <mesh position={[ROOM.halfW, H / 2, 0]} material={wallMat} receiveShadow>
-        <boxGeometry args={[T, H, D]} />
-      </mesh>
+      <ApartmentWalls material={wallMat} />
 
-      {/* Baseboards */}
       <mesh position={[0, 0.06, -ROOM.halfD + T]} material={trimMat}>
         <boxGeometry args={[W - T * 2, 0.12, 0.04]} />
       </mesh>
-      <mesh position={[0, 0.06, ROOM.halfD - T]} material={trimMat}>
-        <boxGeometry args={[W - T * 2, 0.12, 0.04]} />
+      <mesh position={[-1.1, 0.06, ROOM.halfD - T]} material={trimMat}>
+        <boxGeometry args={[3.2, 0.12, 0.04]} />
       </mesh>
 
-      <Window tex={tex.city} z={-ROOM.halfD + T * 0.6} />
-      <Door z={ROOM.halfD - T * 0.7} />
-
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0.01, 0.4]}
-        receiveShadow
-      >
-        <planeGeometry args={[2.4, 1.8]} />
-        <meshStandardMaterial map={tex.rug} roughness={0.9} />
-      </mesh>
-
-      {/* Table */}
-      <group position={[0, 0, -0.7]}>
-        <mesh position={[0, 0.72, 0]} material={darkWood} castShadow receiveShadow>
-          <boxGeometry args={[1.7, 0.06, 0.9]} />
-        </mesh>
-        {[
-          [-0.72, 0.36, -0.36],
-          [0.72, 0.36, -0.36],
-          [-0.72, 0.36, 0.36],
-          [0.72, 0.36, 0.36],
-        ].map((p, i) => (
-          <mesh key={i} position={p as [number, number, number]} material={darkWood} castShadow>
-            <boxGeometry args={[0.07, 0.72, 0.07]} />
-          </mesh>
-        ))}
-      </group>
-
-      {/* Back shelf */}
-      <mesh position={[4.12, 0.46, -3.55]} material={darkWood} castShadow receiveShadow>
-        <boxGeometry args={[1.4, 0.92, 0.42]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={POS.rug} receiveShadow>
+        <planeGeometry args={[2.1, 1.5]} />
+        <meshStandardMaterial map={tex.rug} roughness={0.92} />
       </mesh>
 
       <Poster
         map={tex.posterA}
-        position={[-2.4, 1.7, -ROOM.halfD + 0.08]}
+        position={[-ROOM.halfW + 0.07, 1.62, -0.35]}
+        rotationY={Math.PI / 2}
       />
-      <Poster
-        map={tex.posterB}
-        position={[2.2, 1.65, -ROOM.halfD + 0.08]}
-      />
+      <Poster map={tex.posterB} position={[-1.15, 1.58, -ROOM.halfD + 0.07]} />
 
-      <pointLight position={[0, 2.7, -0.4]} intensity={0.25} color="#fff4e0" />
+      <ApartmentFurniture />
 
-      <mesh position={[0, H - 0.06, 0]} material={trimMat}>
-        <boxGeometry args={[0.28, 0.05, 0.28]} />
-      </mesh>
-
-      {PROPS.map((p) => {
+      {movableProps().map((p) => {
         const hidden = carryingId === p.id || inspectingId === p.id;
         const drop = drops[p.id];
-        const pos = drop ? ([drop.x, drop.y, drop.z] as [number, number, number]) : p.position;
+        const pos = drop
+          ? ([drop.x, drop.y, drop.z] as [number, number, number])
+          : p.position;
         const rotY = drop ? drop.yaw : (p.rotationY ?? 0);
         return (
           <Interactable
@@ -196,107 +141,83 @@ export function PrototypeStudio() {
             position={pos}
             rotationY={rotY}
             visible={!hidden}
+            hit={p.hit}
+            hitOffset={p.hitOffset}
           >
-            <PropMesh id={p.id} />
+            <group scale={p.worldScale ?? 1}>
+              <PropMesh id={p.id} />
+            </group>
           </Interactable>
         );
       })}
 
-      <ContactShadows
-        position={[0, 0.02, 0]}
-        opacity={0.35}
-        scale={12}
-        blur={2.2}
-        far={3}
-      />
+      <ContactShadows position={[0, 0.018, 0]} opacity={0.32} scale={14} blur={2.4} far={3.2} />
     </group>
   );
 }
 
-function Interactable({
-  id,
-  position,
-  rotationY,
-  visible,
-  children,
-}: {
-  id: string;
-  position: [number, number, number];
-  rotationY: number;
-  visible: boolean;
-  children: ReactNode;
-}) {
-  const ref = useRef<THREE.Group>(null);
-  useLayoutEffect(() => {
-    const g = ref.current;
-    if (!g) return;
-    g.userData.propId = id;
-    registerInteractable(g);
-    return () => unregisterInteractable(g);
-  }, [id]);
-
-  const HIT: Record<string, [number, number, number]> = {
-    pack: [0.2, 0.28, 0.16],
-    mug: [0.14, 0.2, 0.14],
-    binder: [0.24, 0.14, 0.26],
-    crate: [0.74, 0.74, 0.74],
-    lamp: [0.22, 0.72, 0.22],
-  };
-  const hit = HIT[id] ?? [0.2, 0.2, 0.2];
+function ApartmentWalls({ material }: { material: THREE.MeshStandardMaterial }) {
+  const H = ROOM.height;
+  const T = ROOM.wall;
+  const hw = ROOM.halfW;
+  const hd = ROOM.halfD;
+  const D = hd * 2;
+  const winLeft = WINDOW.x - WINDOW.width / 2;
+  const winRight = WINDOW.x + WINDOW.width / 2;
+  const sill = WINDOW.sill;
+  const winTop = WINDOW.sill + WINDOW.height;
+  const winSpan = winRight - winLeft;
 
   return (
-    <group ref={ref} position={position} rotation={[0, rotationY, 0]} visible={visible}>
-      {children}
-      <mesh position={id === "lamp" ? [0, -0.18, 0] : [0, 0, 0]}>
-        <boxGeometry args={hit} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    <group>
+      <mesh position={[(-hw + winLeft) / 2, H / 2, -hd]} material={material} receiveShadow castShadow>
+        <boxGeometry args={[winLeft - -hw, H, T]} />
       </mesh>
+      <mesh position={[(winRight + hw) / 2, H / 2, -hd]} material={material} receiveShadow castShadow>
+        <boxGeometry args={[hw - winRight, H, T]} />
+      </mesh>
+      <mesh position={[(winLeft + winRight) / 2, sill / 2, -hd]} material={material} receiveShadow>
+        <boxGeometry args={[winSpan, sill, T]} />
+      </mesh>
+      <mesh
+        position={[(winLeft + winRight) / 2, (winTop + H) / 2, -hd]}
+        material={material}
+        receiveShadow
+      >
+        <boxGeometry args={[winSpan, H - winTop, T]} />
+      </mesh>
+
+      <mesh position={[-hw, H / 2, 0]} material={material} receiveShadow>
+        <boxGeometry args={[T, H, D]} />
+      </mesh>
+      <mesh position={[hw, H / 2, 0]} material={material} receiveShadow>
+        <boxGeometry args={[T, H, D]} />
+      </mesh>
+
+      <SouthWall material={material} />
     </group>
   );
 }
 
-function Window({ tex, z }: { tex: THREE.Texture; z: number }) {
-  const frame = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: "#ece4d6", roughness: 0.5 }),
-    [],
-  );
+function SouthWall({ material }: { material: THREE.MeshStandardMaterial }) {
+  const H = ROOM.height;
+  const T = ROOM.wall;
+  const hw = ROOM.halfW;
+  const hd = ROOM.halfD;
+  const gapLeft = DOOR.x - DOOR.gap / 2;
+  const gapRight = DOOR.x + DOOR.gap / 2;
+  const leftW = gapLeft - -hw;
+  const rightW = hw - gapRight;
   return (
-    <group position={[0, 1.55, z]}>
-      <mesh material={frame} position={[0, 0, -0.02]}>
-        <boxGeometry args={[2.2, 1.35, 0.08]} />
+    <group>
+      <mesh position={[(-hw + gapLeft) / 2, H / 2, hd]} material={material} receiveShadow>
+        <boxGeometry args={[leftW, H, T]} />
       </mesh>
-      <mesh position={[0, 0, 0.01]}>
-        <planeGeometry args={[1.95, 1.12]} />
-        <meshBasicMaterial map={tex} />
+      <mesh position={[(gapRight + hw) / 2, H / 2, hd]} material={material} receiveShadow>
+        <boxGeometry args={[rightW, H, T]} />
       </mesh>
-      <mesh position={[0, 0, 0.02]} material={frame}>
-        <boxGeometry args={[0.05, 1.12, 0.04]} />
-      </mesh>
-    </group>
-  );
-}
-
-function Door({ z }: { z: number }) {
-  const paint = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: "#6d5848", roughness: 0.7 }),
-    [],
-  );
-  const metal = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: "#c9c3b8",
-        metalness: 0.7,
-        roughness: 0.3,
-      }),
-    [],
-  );
-  return (
-    <group position={[1.4, 0, z]}>
-      <mesh position={[0, 1.05, 0]} material={paint} castShadow>
-        <boxGeometry args={[0.92, 2.1, 0.06]} />
-      </mesh>
-      <mesh position={[0.34, 1.05, 0.04]} material={metal}>
-        <sphereGeometry args={[0.03, 12, 12]} />
+      <mesh position={[DOOR.x, (DOOR.height + H) / 2, hd]} material={material} receiveShadow>
+        <boxGeometry args={[DOOR.gap, H - DOOR.height, T]} />
       </mesh>
     </group>
   );
@@ -305,12 +226,14 @@ function Door({ z }: { z: number }) {
 function Poster({
   map,
   position,
+  rotationY = 0,
 }: {
   map: THREE.Texture;
   position: [number, number, number];
+  rotationY?: number;
 }) {
   return (
-    <mesh position={position}>
+    <mesh position={position} rotation={[0, rotationY, 0]}>
       <planeGeometry args={[0.7, 0.95]} />
       <meshStandardMaterial map={map} roughness={0.8} />
     </mesh>

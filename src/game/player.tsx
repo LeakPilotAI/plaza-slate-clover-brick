@@ -15,6 +15,7 @@ import {
   PAD_LOOK_SENS,
   PITCH_LIMIT,
   ROOM,
+  SPAWN,
   SPRINT_SPEED,
   WALK_SPEED,
 } from "./constants";
@@ -24,6 +25,7 @@ import { getProp, toInfo } from "./props";
 import { interactableRoots } from "./registry";
 import { useGame } from "./store";
 import { PropMesh } from "./meshes";
+import type { PropInfo } from "./types";
 
 const _fwd = new THREE.Vector3();
 const _right = new THREE.Vector3();
@@ -76,7 +78,7 @@ export function FirstPersonPlayer() {
 
     if (state.phase === "boot") {
       const sway = Math.sin(t.current * 0.18) * 0.1;
-      player.yaw = sway;
+      player.yaw = SPAWN.yaw + sway;
       player.pitch = -0.08 + Math.sin(t.current * 0.13) * 0.025;
       applyCamera(camera, 0);
       return;
@@ -113,9 +115,10 @@ export function FirstPersonPlayer() {
     acc.current += dt;
     const STEP = 1 / 60;
     let jumpConsumed = false;
+    const doorOpen = useGame.getState().doorOpen;
     while (acc.current >= STEP) {
       const doJump = moving && input.jump && !jumpConsumed;
-      if (moving) simStep(STEP, input.moveX, input.moveY, input.sprint, doJump);
+      if (moving) simStep(STEP, input.moveX, input.moveY, input.sprint, doJump, doorOpen);
       jumpConsumed = jumpConsumed || input.jump;
       acc.current -= STEP;
     }
@@ -177,6 +180,7 @@ function simStep(
   moveY: number,
   sprint: boolean,
   jump: boolean,
+  doorOpen: boolean,
 ) {
   setLookBasis();
   const speed = sprint ? SPRINT_SPEED : WALK_SPEED;
@@ -197,7 +201,7 @@ function simStep(
 
   let x = player.x + player.vx * dt;
   let z = player.z + player.vz * dt;
-  const resolved = resolvePlayerXz(x, z);
+  const resolved = resolvePlayerXz(x, z, undefined, doorOpen);
   if (Math.abs(resolved.x - x) > 0.0001) player.vx = 0;
   if (Math.abs(resolved.z - z) > 0.0001) player.vz = 0;
   player.x = resolved.x;
@@ -228,11 +232,11 @@ function updateHeld(group: THREE.Group | null, _camera: THREE.Camera, dt: number
   setLookBasis();
   const bobY = Math.sin(player.bobPhase) * 0.012;
   group.position.set(
-    player.x + _fwd.x * 0.34 + _right.x * 0.14,
-    player.y + 1.36 + bobY,
-    player.z + _fwd.z * 0.34 + _right.z * 0.14,
+    player.x + _fwd.x * 0.38 + _right.x * 0.18,
+    player.y + 1.28 + bobY,
+    player.z + _fwd.z * 0.38 + _right.z * 0.18,
   );
-  _euler.set(-0.45, player.yaw + 0.4, 0.12);
+  _euler.set(-0.55, player.yaw + 0.35, 0.18);
   group.quaternion.setFromEuler(_euler);
   const s = group.scale.x || 1;
   group.scale.setScalar(THREE.MathUtils.damp(s, 1, 8, dt));
@@ -250,6 +254,74 @@ function updateInspect(group: THREE.Group | null, camera: THREE.Camera) {
   group.rotateX(0.08);
 }
 
+function kindPriority(kind: PropInfo["kind"]) {
+  if (kind === "carry") return 0;
+  if (kind === "toggle") return 1;
+  if (kind === "inspect") return 2;
+  return 3;
+}
+
+function considerTarget(
+  bag: Map<string, { id: string; priority: number; dist: number; ang: number }>,
+  id: string,
+  dist: number,
+  ang: number,
+) {
+  const def = getProp(id);
+  if (!def) return;
+  const priority = kindPriority(def.kind);
+  const prev = bag.get(id);
+  if (!prev || dist < prev.dist) {
+    bag.set(id, { id, priority, dist, ang });
+  }
+}
+
+function pickLookTarget(camera: THREE.Camera): PropInfo | null {
+  const bag = new Map<string, { id: string; priority: number; dist: number; ang: number }>();
+
+  raycaster.setFromCamera(_rayNdc, camera);
+  raycaster.far = INTERACT_RANGE;
+  const hits = raycaster.intersectObjects(interactableRoots(), true);
+  for (const hit of hits) {
+    const id = findPropId(hit.object);
+    if (id) considerTarget(bag, id, hit.distance, 0);
+  }
+
+  camera.getWorldDirection(_dir);
+  for (const root of interactableRoots()) {
+    if (!root.visible) continue;
+    const id = root.userData.propId as string | undefined;
+    if (!id) continue;
+    root.getWorldPosition(_world);
+    _to.copy(_world).sub(camera.position);
+    const dist = _to.length();
+    if (dist > INTERACT_RANGE || dist < 0.12) continue;
+    _to.multiplyScalar(1 / dist);
+    const ang = Math.acos(Math.min(1, Math.max(-1, _dir.dot(_to))));
+    const def = getProp(id);
+    const cone = def?.kind === "carry" || def?.kind === "toggle" ? 0.38 : 0.22;
+    if (ang < cone) considerTarget(bag, id, dist, ang);
+  }
+
+  let best: { id: string; priority: number; dist: number; ang: number } | null = null;
+  for (const c of bag.values()) {
+    if (!best) {
+      best = c;
+      continue;
+    }
+    if (c.priority < best.priority) {
+      best = c;
+      continue;
+    }
+    if (c.priority === best.priority && (c.ang < best.ang - 0.02 || (Math.abs(c.ang - best.ang) <= 0.02 && c.dist < best.dist))) {
+      best = c;
+    }
+  }
+  if (!best) return null;
+  const def = getProp(best.id);
+  return def ? toInfo(def) : null;
+}
+
 function updateInteraction(
   camera: THREE.Camera,
   input: ReturnType<typeof sampleInput>,
@@ -257,36 +329,7 @@ function updateInteraction(
   const state = useGame.getState();
   if (state.phase !== "playing" && state.phase !== "inspecting") return;
 
-  raycaster.setFromCamera(_rayNdc, camera);
-  raycaster.far = INTERACT_RANGE;
-  const hits = raycaster.intersectObjects(interactableRoots(), true);
-
-  let foundId: string | null = null;
-  for (const hit of hits) {
-    foundId = findPropId(hit.object);
-    if (foundId) break;
-  }
-
-  if (!foundId) {
-    camera.getWorldDirection(_dir);
-    let best = 0.28;
-    for (const root of interactableRoots()) {
-      if (!root.visible) continue;
-      root.getWorldPosition(_world);
-      _to.copy(_world).sub(camera.position);
-      const dist = _to.length();
-      if (dist > INTERACT_RANGE || dist < 0.15) continue;
-      _to.multiplyScalar(1 / dist);
-      const ang = Math.acos(Math.min(1, Math.max(-1, _dir.dot(_to))));
-      if (ang < best) {
-        best = ang;
-        foundId = (root.userData.propId as string | undefined) ?? null;
-      }
-    }
-  }
-
-  const def = foundId ? getProp(foundId) : undefined;
-  const info = def ? toInfo(def) : null;
+  const info = pickLookTarget(camera);
   if (state.phase === "playing") state.setLookingAt(info);
 
   if (state.phase === "inspecting") {
@@ -302,7 +345,7 @@ function updateInteraction(
 
   if (input.inspect) {
     const target = state.carrying ?? info;
-    if (target) {
+    if (target && target.kind !== "use") {
       state.setInspecting(target);
       state.markInspected();
       sfx.inspect();
@@ -318,6 +361,10 @@ function updateInteraction(
   if (input.interact) {
     if (!info) {
       if (state.carrying) dropCarrying();
+      return;
+    }
+    if (info.kind === "use") {
+      handleUse(info);
       return;
     }
     if (info.kind === "toggle" && info.id === "lamp") {
@@ -346,6 +393,22 @@ function updateInteraction(
   }
 }
 
+function handleUse(info: PropInfo) {
+  const state = useGame.getState();
+  if (info.id === "door") {
+    state.toggleDoor();
+    sfx.door();
+    return;
+  }
+  if (info.id === "computer") {
+    state.useComputer();
+    sfx.use();
+    return;
+  }
+  state.showNotice(info.name, info.blurb);
+  sfx.use();
+}
+
 function findPropId(obj: THREE.Object3D | null): string | null {
   let o: THREE.Object3D | null = obj;
   while (o) {
@@ -356,7 +419,7 @@ function findPropId(obj: THREE.Object3D | null): string | null {
   return null;
 }
 
-function pickUp(info: ReturnType<typeof toInfo>) {
+function pickUp(info: PropInfo) {
   const state = useGame.getState();
   state.setCarrying(info);
   state.markPicked();

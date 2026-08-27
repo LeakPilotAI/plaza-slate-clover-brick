@@ -29,7 +29,7 @@ export function TouchControls() {
           }
           primary
         />
-        {looking?.kind === "toggle" ? (
+        {looking?.kind === "toggle" || looking?.kind === "use" ? (
           <RoundBtn label="Use" onPress={() => pulse(["KeyE"])} icon={<Hand className="size-5" />} />
         ) : null}
       </div>

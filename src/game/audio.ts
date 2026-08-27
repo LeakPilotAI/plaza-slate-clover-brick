@@ -55,4 +55,9 @@ export const sfx = {
   toggle: () => tone(300, 0.07, "square", 0.025),
   step: () => tone(90 + Math.random() * 20, 0.05, "triangle", 0.02),
   deny: () => tone(140, 0.12, "sawtooth", 0.02, 0.7),
+  use: () => tone(380, 0.1, "sine", 0.03),
+  door: () => {
+    tone(170, 0.16, "triangle", 0.035, 0.55);
+    tone(90, 0.2, "square", 0.012, 0.7);
+  },
 };

@@ -1,3 +1,4 @@
+import { solids } from "./collision";
 import { setInjectedKeys } from "./input";
 import { horizontalSpeed, player, resetPlayer } from "./playerState";
 import { interactableRoots } from "./registry";
@@ -32,6 +33,7 @@ export function installControlsTest() {
       useGame.getState().setInspecting(null);
     },
     toggleLamp: () => useGame.getState().toggleLamp(),
+    toggleDoor: () => useGame.getState().toggleDoor(),
     setLook: (yaw: number, pitch: number) => {
       player.yaw = yaw;
       player.pitch = pitch;
@@ -39,6 +41,8 @@ export function installControlsTest() {
     looking: () => useGame.getState().lookingAt,
     carrying: () => useGame.getState().carrying,
     inspecting: () => useGame.getState().inspecting,
+    doorOpen: () => useGame.getState().doorOpen,
+    solids: () => solids(useGame.getState().doorOpen),
     targets: () => interactableRoots().length,
     pose: () => ({
       x: player.x,

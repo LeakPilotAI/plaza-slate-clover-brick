@@ -8,7 +8,7 @@ export function PauseOverlay() {
     <div className="overlay-fade absolute inset-0 z-20 flex items-center justify-center bg-bg/70 p-6">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-lg">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted">Paused</p>
-        <h2 className="font-display mt-2 text-3xl text-fg">Studio</h2>
+        <h2 className="font-display mt-2 text-3xl text-fg">Apartment</h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           Pointer lock releases with Escape. Resume to keep walking.
         </p>
