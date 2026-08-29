@@ -74,7 +74,6 @@ export function ApartmentFurniture() {
       <CeilingFixture />
       <Doormat map={tex.doormat} />
       <WallClock />
-      <StairHit />
     </group>
   );
 }
@@ -340,7 +339,6 @@ function Hallway({
   const z0 = ROOM.halfD;
   const depth = HALL.depth;
   const zMid = z0 + depth / 2;
-  const zFar = z0 + depth;
   const { centerX: cx, width: w, height: h } = HALL;
   const T = ROOM.wall;
 
@@ -364,9 +362,6 @@ function Hallway({
       <mesh position={[cx + w / 2, h / 2, zMid]} material={hallPaint} receiveShadow>
         <boxGeometry args={[T, h, depth]} />
       </mesh>
-      <mesh position={[cx, h / 2, zFar]} material={hallPaint} receiveShadow>
-        <boxGeometry args={[w, h, T]} />
-      </mesh>
 
       {/* Neighbor door 4A */}
       <group position={[cx - w / 2 + 0.04, 0, z0 + 0.85]}>
@@ -375,20 +370,6 @@ function Hallway({
         </mesh>
         <mesh position={[0.03, 1.8, 0]} material={metal}>
           <boxGeometry args={[0.01, 0.07, 0.14]} />
-        </mesh>
-      </group>
-
-      {/* Far stairwell door */}
-      <group position={[cx, 0, zFar - 0.04]}>
-        <mesh position={[0, 1.05, 0]} material={metalDark} castShadow>
-          <boxGeometry args={[0.96, 2.1, 0.06]} />
-        </mesh>
-        <mesh position={[0, 1.35, 0.04]}>
-          <planeGeometry args={[0.28, 0.42]} />
-          <meshStandardMaterial color="#1a1c22" roughness={0.3} metalness={0.2} />
-        </mesh>
-        <mesh position={[0, 1.88, 0.04]} material={metal}>
-          <boxGeometry args={[0.28, 0.08, 0.01]} />
         </mesh>
       </group>
 
@@ -444,13 +425,6 @@ function WallClock() {
         <boxGeometry args={[0.008, 0.04, 0.006]} />
       </mesh>
     </group>
-  );
-}
-
-function StairHit() {
-  const def = getProp("stair")!;
-  return (
-    <Interactable id="stair" position={POS.stair} hit={def.hit} />
   );
 }
 

@@ -3,9 +3,9 @@ import {
   collisionWalls,
   doorSolid,
   FURNITURE_BOXES,
-  worldBounds,
   type Box3,
 } from "./layout";
+import { exitSolid, lobbyWalls, townSolids, townWorldBounds } from "./town/layout";
 
 export type Aabb = {
   min: [number, number, number];
@@ -21,11 +21,14 @@ export function boxToAabb(b: Box3): Aabb {
   };
 }
 
-export function solids(doorOpen: boolean): Aabb[] {
+export function solids(doorOpen: boolean, exitOpen = false): Aabb[] {
   return [
     ...collisionWalls().map(boxToAabb),
+    ...lobbyWalls().map(boxToAabb),
     ...FURNITURE_BOXES.map(boxToAabb),
+    ...townSolids().map(boxToAabb),
     boxToAabb(doorSolid(doorOpen)),
+    boxToAabb(exitSolid(exitOpen)),
   ];
 }
 
@@ -72,11 +75,12 @@ export function resolvePlayerXz(
   z: number,
   radius = PLAYER_RADIUS,
   doorOpen = false,
+  exitOpen = false,
 ) {
-  const bound = worldBounds();
+  const bound = townWorldBounds();
   let nx = clamp(x, bound.minX + radius, bound.maxX - radius);
   let nz = clamp(z, bound.minZ + radius, bound.maxZ - radius);
-  for (const box of solids(doorOpen)) {
+  for (const box of solids(doorOpen, exitOpen)) {
     [nx, nz] = separateCircleAabb(
       nx,
       nz,

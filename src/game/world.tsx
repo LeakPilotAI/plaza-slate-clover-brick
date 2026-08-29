@@ -8,6 +8,7 @@ import { DOOR, POS, WINDOW } from "./layout";
 import { PropMesh } from "./meshes";
 import { movableProps } from "./props";
 import { useGame } from "./store";
+import { Town } from "./town/Town";
 import { getTextures } from "./textures";
 
 const WINDOW_LIGHT = { x: 0.6, y: 2.8, z: -6.2 };
@@ -142,6 +143,7 @@ export function Apartment() {
       })}
 
       <ContactShadows position={[0, 0.018, 0]} opacity={0.32} scale={14} blur={2.4} far={3.2} />
+      <Town />
     </group>
   );
 }

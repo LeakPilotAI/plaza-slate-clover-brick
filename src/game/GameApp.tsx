@@ -9,6 +9,7 @@ import { useGame } from "./store";
 import { Hud } from "./ui/Hud";
 import { InspectOverlay } from "./ui/InspectOverlay";
 import { PauseOverlay } from "./ui/PauseOverlay";
+import { ShopOverlay } from "./ui/ShopOverlay";
 import { SleepOverlay } from "./ui/SleepOverlay";
 import { StartOverlay } from "./ui/StartOverlay";
 import { StorageOverlay } from "./ui/StorageOverlay";
@@ -54,7 +55,7 @@ export default function GameApp() {
         camera={{
           fov: 75,
           near: 0.08,
-          far: 60,
+          far: 90,
           position: [SPAWN.x, 1.62, SPAWN.z],
         }}
         gl={{
@@ -73,8 +74,8 @@ export default function GameApp() {
           });
         }}
       >
-        <color attach="background" args={["#16131c"]} />
-        <fog attach="fog" args={["#16131c", 10, 26]} />
+        <color attach="background" args={["#1c1824"]} />
+        <fog attach="fog" args={["#1c1824", 22, 62]} />
         <Apartment />
         <FirstPersonPlayer />
       </Canvas>
@@ -87,6 +88,7 @@ export default function GameApp() {
       {phase === "computer" ? <ComputerOverlay /> : null}
       {phase === "storage" ? <StorageOverlay /> : null}
       {phase === "sleeping" ? <SleepOverlay /> : null}
+      {phase === "shop" ? <ShopOverlay /> : null}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { sfx } from "./audio";
+import { sfx, setOutdoor } from "./audio";
 import { resolvePlayerXz, surfaceY } from "./collision";
 import {
   ACCEL_GROUND,
@@ -23,7 +23,7 @@ import { sampleInput, tryPointerLock, exitPointerLock } from "./input";
 import { horizontalSpeed, player } from "./playerState";
 import { getProp, toInfo } from "./props";
 import { interactableRoots } from "./registry";
-import { useGame } from "./store";
+import { useGame, zoneFromPos } from "./store";
 import { PropMesh } from "./meshes";
 import type { PropInfo } from "./types";
 
@@ -59,7 +59,7 @@ export function FirstPersonPlayer() {
 
   useEffect(() => {
     camera.near = 0.06;
-    camera.far = 60;
+    camera.far = 90;
     camera.updateProjectionMatrix();
   }, [camera]);
 
@@ -91,7 +91,8 @@ export function FirstPersonPlayer() {
       } else if (
         live.phase === "computer" ||
         live.phase === "storage" ||
-        live.phase === "sleeping"
+        live.phase === "sleeping" ||
+        live.phase === "shop"
       ) {
         live.closeStation();
         void tryPointerLock();
@@ -123,9 +124,10 @@ export function FirstPersonPlayer() {
     const STEP = 1 / 60;
     let jumpConsumed = false;
     const doorOpen = useGame.getState().doorOpen;
+    const exitOpen = useGame.getState().exitOpen;
     while (acc.current >= STEP) {
       const doJump = moving && input.jump && !jumpConsumed;
-      if (moving) simStep(STEP, input.moveX, input.moveY, input.sprint, doJump, doorOpen);
+      if (moving) simStep(STEP, input.moveX, input.moveY, input.sprint, doJump, doorOpen, exitOpen);
       jumpConsumed = jumpConsumed || input.jump;
       acc.current -= STEP;
     }
@@ -149,6 +151,10 @@ export function FirstPersonPlayer() {
     persp.updateProjectionMatrix();
 
     applyCamera(camera, player.bob);
+
+    const zone = zoneFromPos(player.x, player.z);
+    if (useGame.getState().zone !== zone) useGame.getState().setZone(zone);
+    setOutdoor(zone === "street" || zone === "shop");
 
     updateInteraction(camera, input);
     updateHeld(held.current, camera, dt);
@@ -188,6 +194,7 @@ function simStep(
   sprint: boolean,
   jump: boolean,
   doorOpen: boolean,
+  exitOpen: boolean,
 ) {
   setLookBasis();
   const speed = sprint ? SPRINT_SPEED : WALK_SPEED;
@@ -208,7 +215,7 @@ function simStep(
 
   let x = player.x + player.vx * dt;
   let z = player.z + player.vz * dt;
-  const resolved = resolvePlayerXz(x, z, undefined, doorOpen);
+  const resolved = resolvePlayerXz(x, z, undefined, doorOpen, exitOpen);
   if (Math.abs(resolved.x - x) > 0.0001) player.vx = 0;
   if (Math.abs(resolved.z - z) > 0.0001) player.vz = 0;
   player.x = resolved.x;
@@ -405,6 +412,17 @@ function handleUse(info: PropInfo) {
   if (info.id === "door") {
     state.toggleDoor();
     sfx.door();
+    return;
+  }
+  if (info.id === "exit") {
+    state.toggleExit();
+    sfx.door();
+    return;
+  }
+  if (info.id === "shop") {
+    exitPointerLock();
+    state.openShop();
+    sfx.use();
     return;
   }
   if (info.id === "computer") {

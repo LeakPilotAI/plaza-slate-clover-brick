@@ -30,7 +30,10 @@ export type Phase =
   | "inspecting"
   | "computer"
   | "storage"
-  | "sleeping";
+  | "sleeping"
+  | "shop";
+
+export type Zone = "home" | "hall" | "street" | "shop";
 
 export type Vec3 = { x: number; y: number; z: number };
 
@@ -59,6 +62,10 @@ declare global {
       carrying: () => PropInfo | null | undefined;
       inspecting: () => PropInfo | null | undefined;
       doorOpen: () => boolean;
+      exitOpen: () => boolean;
+      zone: () => Zone;
+      toggleExit: () => void;
+      openShop: () => void;
       phase: () => Phase;
       openComputer: () => void;
       openStorage: () => void;

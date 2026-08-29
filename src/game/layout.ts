@@ -137,10 +137,6 @@ export function collisionWalls(): Box3[] {
       pos: [hall.maxX, HALL.height / 2, (hall.minZ + hall.maxZ) / 2],
       size: [T, HALL.height, HALL.depth + T],
     },
-    {
-      pos: [HALL.centerX, HALL.height / 2, hall.maxZ],
-      size: [HALL.width + T, HALL.height, T],
-    },
   ];
 }
 
@@ -159,12 +155,11 @@ export function doorSolid(open: boolean): Box3 {
 }
 
 export function worldBounds() {
-  const hall = hallBounds();
   return {
     minX: -ROOM.halfW - 0.8,
     maxX: ROOM.halfW + 0.8,
     minZ: -ROOM.halfD - 0.8,
-    maxZ: hall.maxZ + 0.8,
+    maxZ: hallBounds().maxZ + 0.8,
   };
 }
 

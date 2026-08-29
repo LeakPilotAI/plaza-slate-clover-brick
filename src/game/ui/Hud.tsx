@@ -1,4 +1,4 @@
-import { interactPrompt, objectiveText, useGame } from "../store";
+import { interactPrompt, objectiveText, useGame, zoneLabel } from "../store";
 import { horizontalSpeed, player } from "../playerState";
 import { useEffect, useState } from "react";
 
@@ -9,23 +9,26 @@ export function Hud() {
   const hint = useGame((s) => s.hint);
   const notice = useGame((s) => s.notice);
   const doorOpen = useGame((s) => s.doorOpen);
+  const exitOpen = useGame((s) => s.exitOpen);
+  const zone = useGame((s) => s.zone);
   const pointerLocked = useGame((s) => s.pointerLocked);
   const isTouch = useGame((s) => s.isTouch);
   const debug = useGame((s) => s.debug);
-  const prompt = interactPrompt(lookingAt, carrying, doorOpen);
-  const objective = objectiveText(tutorial);
+  const prompt = interactPrompt(lookingAt, carrying, doorOpen, exitOpen);
+  const objective = objectiveText(tutorial, zone);
+  const loc = zoneLabel(zone);
 
   return (
     <div className="pointer-events-none absolute inset-0 z-10 text-fg">
       <div className="absolute left-4 top-4 max-w-[16rem] sm:left-6 sm:top-6">
         <p className="font-display text-xl tracking-tight">Foilbound</p>
-        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted">Apt 4B · Home</p>
+        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted">{loc.kicker}</p>
         <p className="mt-4 text-sm text-fg">{objective}</p>
         {hint ? <p className="mt-2 text-xs text-danger">{hint}</p> : null}
       </div>
 
       <div className="absolute right-4 top-4 text-right sm:right-6 sm:top-6">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">Home</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">{loc.area}</p>
         {carrying ? (
           <p className="mt-2 text-sm text-fg">Holding {carrying.name}</p>
         ) : (

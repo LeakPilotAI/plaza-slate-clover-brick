@@ -65,3 +65,36 @@ export const sfx = {
     tone(360, 0.12, "triangle", 0.025, 1.2);
   },
 };
+
+let outdoor: { gain: GainNode; src: AudioBufferSourceNode } | null = null;
+
+export function setOutdoor(on: boolean) {
+  const ac = getCtx();
+  if (!ac) return;
+  if (on) {
+    if (outdoor) return;
+    const buffer = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.04;
+    const src = ac.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    const filter = ac.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 420;
+    const gain = ac.createGain();
+    gain.gain.value = 0.012;
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ac.destination);
+    src.start();
+    outdoor = { gain, src };
+  } else if (outdoor) {
+    try {
+      outdoor.src.stop();
+    } catch {
+      /* already stopped */
+    }
+    outdoor = null;
+  }
+}

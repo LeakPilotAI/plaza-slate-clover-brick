@@ -22,8 +22,8 @@ export function StartOverlay() {
           Foilbound
         </h1>
         <p className="reveal reveal-d2 mt-4 max-w-md text-base leading-relaxed text-muted">
-          A cheap starter apartment. Bed, desk, a sealed Lumen Arc pack. This is
-          yours now.
+          A cheap starter apartment on Ash Street. Bed, desk, a sealed Lumen
+          Arc pack. The shop is a short walk.
         </p>
 
         <button

@@ -9,7 +9,9 @@ import {
   type AptSave,
   type DropPose,
 } from "./save";
-import type { Notice, Phase, PropInfo } from "./types";
+import { EXIT, SHOP } from "./town/layout";
+import { ROOM } from "./layout";
+import type { Notice, Phase, PropInfo, Zone } from "./types";
 
 type Tutorial = AptSave["tutorial"];
 
@@ -20,6 +22,8 @@ type GameState = {
   inspecting: PropInfo | null;
   lampOn: boolean;
   doorOpen: boolean;
+  exitOpen: boolean;
+  zone: Zone;
   drops: Record<string, DropPose>;
   notice: Notice | null;
   pointerLocked: boolean;
@@ -36,10 +40,13 @@ type GameState = {
   recordDrop: (id: string, pose: DropPose) => void;
   toggleLamp: () => void;
   toggleDoor: () => void;
+  toggleExit: () => void;
   openComputer: () => void;
   openStorage: () => void;
   openSleep: () => void;
+  openShop: () => void;
   closeStation: () => void;
+  setZone: (zone: Zone) => void;
   showNotice: (title: string, body: string) => void;
   clearNotice: () => void;
   setPointerLocked: (v: boolean) => void;
@@ -76,6 +83,8 @@ export const useGame = create<GameState>((set, get) => ({
   inspecting: null,
   lampOn: true,
   doorOpen: false,
+  exitOpen: false,
+  zone: "home",
   drops: {},
   notice: null,
   pointerLocked: false,
@@ -92,6 +101,8 @@ export const useGame = create<GameState>((set, get) => ({
       isTouch: isTouchDevice(),
       lampOn: saved.lampOn,
       doorOpen: saved.doorOpen,
+      exitOpen: false,
+      zone: "home",
       drops: saved.drops,
       tutorial: saved.tutorial,
       notice: null,
@@ -129,6 +140,9 @@ export const useGame = create<GameState>((set, get) => ({
     set({ doorOpen: !get().doorOpen });
     get().flushSave();
   },
+  toggleExit: () => {
+    set({ exitOpen: !get().exitOpen });
+  },
   openComputer: () => {
     if (get().phase === "playing") set({ phase: "computer", lookingAt: null });
   },
@@ -138,11 +152,23 @@ export const useGame = create<GameState>((set, get) => ({
   openSleep: () => {
     if (get().phase === "playing") set({ phase: "sleeping", lookingAt: null });
   },
+  openShop: () => {
+    if (get().phase === "playing") set({ phase: "shop", lookingAt: null });
+  },
   closeStation: () => {
     const { phase } = get();
-    if (phase === "computer" || phase === "storage" || phase === "sleeping") {
+    if (
+      phase === "computer" ||
+      phase === "storage" ||
+      phase === "sleeping" ||
+      phase === "shop"
+    ) {
       set({ phase: "playing" });
     }
+  },
+  setZone: (zone) => {
+    if (get().zone === zone) return;
+    set({ zone });
   },
   showNotice: (title, body) => {
     if (typeof window !== "undefined" && noticeTimer) {
@@ -186,17 +212,34 @@ export const useGame = create<GameState>((set, get) => ({
   },
 }));
 
-export function objectiveText(t: Tutorial) {
+export function zoneFromPos(x: number, z: number): Zone {
+  if (z < ROOM.halfD + 0.15) return "home";
+  if (z < EXIT.z - 0.15) return "hall";
+  if (z > SHOP.z0 - 2.4 && Math.abs(x - SHOP.x) < SHOP.width / 2 + 0.8) return "shop";
+  return "street";
+}
+
+export function zoneLabel(zone: Zone) {
+  if (zone === "home") return { kicker: "Apt 4B · Home", area: "Home" };
+  if (zone === "hall") return { kicker: "Building 14 · Hall", area: "Hall" };
+  if (zone === "shop") return { kicker: "Lumen Arc Cards", area: "Shop" };
+  return { kicker: "Ash Street", area: "Street" };
+}
+
+export function objectiveText(t: Tutorial, zone: Zone = "home") {
   if (!t.picked) return "Pick up the booster pack";
   if (!t.inspected) return "Inspect what you are holding";
   if (!t.dropped) return "Set it back down";
-  return "This is home. Look around.";
+  if (zone === "home" || zone === "hall") return "The street is through the hall.";
+  if (zone === "shop") return "Closed. Come back later.";
+  return "Find Lumen Arc Cards.";
 }
 
 export function interactPrompt(
   looking: PropInfo | null,
   carrying: PropInfo | null,
   doorOpen = false,
+  exitOpen = false,
 ) {
   if (!looking) {
     return carrying ? "G drop" : null;
@@ -204,6 +247,7 @@ export function interactPrompt(
   if (looking.kind === "toggle") return `E  ${looking.name}`;
   if (looking.kind === "use") {
     if (looking.id === "door") return doorOpen ? "E  Close" : "E  Open";
+    if (looking.id === "exit") return exitOpen ? "E  Close" : "E  Open";
     return `E  ${looking.useLabel ?? looking.name}`;
   }
   if (looking.kind === "inspect") return `F  Inspect ${looking.name}`;
